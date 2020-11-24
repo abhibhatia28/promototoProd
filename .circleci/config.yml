@@ -1,24 +1,6 @@
 version: 2.1
-
-commands:
-  destroy_environment:
-    steps:
-      - run:
-          name: destroy environment
-          command: |
-            aws cloudformation delete-stack --stack-name "${CIRCLE_WORKFLOW_ID:0:7}"
             
 jobs:
-  clean_up_old_front_end:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Promoto to prod
-          command: |
-            aws s3 rm "s3://${OldPipelineID}" --recursive
-            aws cloudformation delete-stack --stack-name "${PreviousPipelineID}"
 
   promote_to_production:
     docker:
@@ -44,10 +26,13 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file bucket.yml \
-              --stack-name "${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides PipelineID="${CIRCLE_WORKFLOW_ID:0:7}" 
+              --stack-name "${CIRCLE_WORKFLOW_ID}" \
+              --parameter-overrides Name="${CIRCLE_WORKFLOW_ID}" 
+      - run: aws s3 sync . s3://"${CIRCLE_WORKFLOW_ID}" --delete
  
 workflows:
-  my_workflow:
-    jobs:
-      - create_and_deploy_front_end
+    default:
+      jobs:
+        - create_and_deploy_front_end
+        - promote_to_production
+            requires: [create_and_deploy_front_end]
