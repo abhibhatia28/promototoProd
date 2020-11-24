@@ -1,0 +1,29 @@
+Parameters:
+  PipelineID:
+    Description: Unique identifier.
+    Type: String
+
+Resources:
+
+  WebpageCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Sub "${PipelineID}.s3-website-us-west-2.amazonaws.com"
+            Id: webpage
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        Enabled: True
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: False
+          TargetOriginId: webpage
+          ViewerProtocolPolicy: allow-all
+
+Outputs:
+  PipelineID:
+    Value: !Sub ${PipelineID}
+    Export:
+      Name: PipelineID
